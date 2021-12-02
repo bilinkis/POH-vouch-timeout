@@ -22,17 +22,15 @@ import {
   TwitterIcon,
   TwitterShareButton,
 } from "react-share";
-import { graphql, useFragment } from "relay-hooks";
+import { graphql, useFragment, useQuery } from "relay-hooks";
 
 import Deadlines from "./deadlines";
 import GaslessVouchButton from "./gasless-vouch";
 import SmallAvatar from "./small-avatar";
 import UBICard from "./ubi-card";
 import VouchButton from "./vouch-button";
-import { useQuery } from "relay-hooks";
+
 import { appQuery } from "_pages/index/app-query";
-
-
 import {
   challengeReasonEnum,
   partyEnum,
@@ -59,8 +57,8 @@ const submissionDetailsCardFragments = {
       name
       disputed
       vouchees {
-        id,
-        status,
+        id
+        status
         disputed
       }
       requests(
@@ -143,27 +141,31 @@ export default function SubmissionDetailsCard({
     },
     { skip: !accounts?.[0] }
   );
-  console.log(props?.submission?.vouchees)
-  const validVouches = props?.submission?.vouchees.filter(function(vouchee){
-    return vouchee?.disputed == false;
-  })
-  const disputedVouches = props?.submission?.vouchees.filter(function(vouchee){
-    return vouchee?.disputed == true;
-  })
-  console.log(disputedVouches)
-  
-  const ratioOfVouchees = validVouches?.length / props?.submission?.vouchees.length;
-  console.log(ratioOfVouchees);
+
+  const validVouches = props?.submission?.vouchees.filter(
+    (vouchee) => vouchee?.disputed === false
+  );
+  const disputedVouches = props?.submission?.vouchees.filter(
+    (vouchee) => vouchee?.disputed === true
+  );
+
+  const ratioOfVouchees =
+    validVouches?.length / props?.submission?.vouchees.length;
+
   let vouchingTimeout = false;
-  if(disputedVouches?.length >0){
-    const latestChallengedVouchee = disputedVouches?.sort((a,b) => (a.requests[0].challenges[0].creationTime < b.requests[0].challenges[0].creationTime) ? 1 : -1)
-    console.log(latestChallengedVouchee[0]);
-    const challengeTimestamp = latestChallengedVouchee[0].requests[0].challenges[0].creationTime * 1000;
-    vouchingTimeout  = challengeTimestamp + 2629743000 > Date.now() ? true : false;
-    console.log(vouchingTimeout)
-    
+  if (disputedVouches?.length > 0) {
+    const latestChallengedVouchee = disputedVouches?.sort((a, b) =>
+      a.requests[0].challenges[0].creationTime <
+      b.requests[0].challenges[0].creationTime
+        ? 1
+        : -1
+    );
+
+    const challengeTimestamp =
+      latestChallengedVouchee[0].requests[0].challenges[0].creationTime * 1000;
+    vouchingTimeout = challengeTimestamp + 2629743000 > Date.now();
   }
-  
+
   const { lastStatusChange } = request;
   const {
     submissionBaseDeposit,
@@ -322,20 +324,20 @@ export default function SubmissionDetailsCard({
                   Fund Submission
                 </FundButton>
               )}
-              
-              { ratioOfVouchees < 0.8 && vouchingTimeout? 
-                
-                <Text>You can't vouch because your vouching coherence is under 80%. </Text>
-                :
+
+              {ratioOfVouchees < 0.8 && vouchingTimeout ? (
+                <Text>
+                  You can&apos;t vouch because your vouching coherence is under
+                  80%.{" "}
+                </Text>
+              ) : (
                 <>
-                <GaslessVouchButton submissionID={id} />
-                <VouchButton submissionID={id} />
+                  <GaslessVouchButton submissionID={id} />
+                  <VouchButton submissionID={id} />
                 </>
-              }
-            
+              )}
             </>
           )}
-          
         </Box>
         <Flex sx={{ width: "100%" }}>
           <Box
