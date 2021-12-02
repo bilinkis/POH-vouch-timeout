@@ -22,8 +22,6 @@ import { memo, useCallback, useEffect, useRef } from "react";
 
 import { useEvidenceFile } from "data";
 import getVideoEmptyBorderSize from "lib/get-video-empty-border-size";
-import palette from 'get-rgba-palette';
-
 
 const VIDEO_OPTIONS = {
   types: {
@@ -50,7 +48,6 @@ const PHOTO_OPTIONS = {
     label: "2 MB",
   },
 };
-
 
 const sanitize = (input) =>
   input
@@ -154,17 +151,7 @@ const SubmitProfileForm = memo(
                             .split(";");
                           return mimeType === allowedMimeType;
                         })
-                )
-                .test(
-                  "fileFilters",
-                  "Photo must not contain filters",
-                  (value)=>{
-                    
-                    if(value){
-                      const bytes = new Uint8Array(value.content);
-                      console.log(palette(bytes,1))
-                  }
-                  }),
+                ),
               video: file()
                 .required("Required")
                 .test(
@@ -287,6 +274,57 @@ const SubmitProfileForm = memo(
               onProgress: onSubmissionUploadProgress,
             }
           );
+          if (reapply) {
+            const messageParameters = JSON.stringify({
+              domain: {
+                name: "Proof Of Humanity",
+              },
+              message: {
+                claim: `Reapplying for proof of humanity. My address is ${accounts?.[0].toLowerCase()}`,
+              },
+              primaryType: "Auth",
+              types: {
+                EIP712Domain: [{ name: "name", type: "string" }],
+                Auth: [{ name: "claim", type: "string" }],
+              },
+            });
+
+            const from = accounts?.[0];
+            const parameters = [from, messageParameters];
+            const method = "eth_signTypedData_v4";
+
+            const promiseRequestSignature = () =>
+              new Promise((resolve, reject) => {
+                web3.currentProvider.sendAsync(
+                  {
+                    method,
+                    params: parameters,
+                    from,
+                  },
+                  (err, result) => {
+                    if (err) return reject(err);
+
+                    return resolve(result);
+                  }
+                );
+              });
+
+            const requestSigResult = await promiseRequestSignature();
+            const signature = requestSigResult.result;
+
+            await fetch(
+              `${process.env.NEXT_PUBLIC_VOUCH_DB_URL}/vouch/deleteSubmission`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  signature,
+                  submissionId: accounts?.[0],
+                }),
+              }
+            );
+          }
+
           try {
             setWaitingForTransaction(true);
             pageScroll();
