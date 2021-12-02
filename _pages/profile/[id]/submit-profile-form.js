@@ -22,6 +22,8 @@ import { memo, useCallback, useEffect, useRef } from "react";
 
 import { useEvidenceFile } from "data";
 import getVideoEmptyBorderSize from "lib/get-video-empty-border-size";
+import palette from 'get-rgba-palette';
+
 
 const VIDEO_OPTIONS = {
   types: {
@@ -48,6 +50,7 @@ const PHOTO_OPTIONS = {
     label: "2 MB",
   },
 };
+
 
 const sanitize = (input) =>
   input
@@ -151,7 +154,17 @@ const SubmitProfileForm = memo(
                             .split(";");
                           return mimeType === allowedMimeType;
                         })
-                ),
+                )
+                .test(
+                  "fileFilters",
+                  "Photo must not contain filters",
+                  (value)=>{
+                    
+                    if(value){
+                      const bytes = new Uint8Array(value.content);
+                      console.log(palette(bytes,1))
+                  }
+                  }),
               video: file()
                 .required("Required")
                 .test(

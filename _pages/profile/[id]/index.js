@@ -134,6 +134,7 @@ export const IdQuery = graphql`
       registered
       submissionTime
       disputed
+      
       ...submissionDetailsCardSubmission
       ...submissionDetailsAccordionSubmission
     }

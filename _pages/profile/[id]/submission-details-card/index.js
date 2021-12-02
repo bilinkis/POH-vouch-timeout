@@ -29,6 +29,9 @@ import GaslessVouchButton from "./gasless-vouch";
 import SmallAvatar from "./small-avatar";
 import UBICard from "./ubi-card";
 import VouchButton from "./vouch-button";
+import { useQuery } from "relay-hooks";
+import { appQuery } from "_pages/index/app-query";
+
 
 import {
   challengeReasonEnum,
@@ -56,7 +59,9 @@ const submissionDetailsCardFragments = {
       name
       disputed
       vouchees {
-        id
+        id,
+        status,
+        disputed
       }
       requests(
         orderBy: creationTime
@@ -129,7 +134,36 @@ export default function SubmissionDetailsCard({
     submissionDetailsCardFragments.submission,
     submission
   ));
-
+  const [accounts] = useWeb3("eth", "getAccounts");
+  const { props } = useQuery(
+    appQuery,
+    {
+      id: accounts?.[0]?.toLowerCase(),
+      contributor: accounts?.[0]?.toLowerCase(),
+    },
+    { skip: !accounts?.[0] }
+  );
+  console.log(props?.submission?.vouchees)
+  const validVouches = props?.submission?.vouchees.filter(function(vouchee){
+    return vouchee?.disputed == false;
+  })
+  const disputedVouches = props?.submission?.vouchees.filter(function(vouchee){
+    return vouchee?.disputed == true;
+  })
+  console.log(disputedVouches)
+  
+  const ratioOfVouchees = validVouches?.length / props?.submission?.vouchees.length;
+  console.log(ratioOfVouchees);
+  let vouchingTimeout = false;
+  if(disputedVouches?.length >0){
+    const latestChallengedVouchee = disputedVouches?.sort((a,b) => (a.requests[0].challenges[0].creationTime < b.requests[0].challenges[0].creationTime) ? 1 : -1)
+    console.log(latestChallengedVouchee[0]);
+    const challengeTimestamp = latestChallengedVouchee[0].requests[0].challenges[0].creationTime * 1000;
+    vouchingTimeout  = challengeTimestamp + 2629743000 > Date.now() ? true : false;
+    console.log(vouchingTimeout)
+    
+  }
+  
   const { lastStatusChange } = request;
   const {
     submissionBaseDeposit,
@@ -216,7 +250,6 @@ export default function SubmissionDetailsCard({
         setOffChainVouches(res.vouches[0].vouchers);
     })();
   }, [id]);
-
   const registeredVouchers = useMemo(() => {
     const vouchersSet = new Set();
     offChainVouches.forEach((v) => vouchersSet.add(v));
@@ -289,10 +322,20 @@ export default function SubmissionDetailsCard({
                   Fund Submission
                 </FundButton>
               )}
-              <GaslessVouchButton submissionID={id} />
-              <VouchButton submissionID={id} />
+              
+              { ratioOfVouchees < 0.8 && vouchingTimeout? 
+                
+                <Text>You can't vouch because your vouching coherence is under 80%. </Text>
+                :
+                <>
+                <GaslessVouchButton submissionID={id} />
+                <VouchButton submissionID={id} />
+                </>
+              }
+            
             </>
           )}
+          
         </Box>
         <Flex sx={{ width: "100%" }}>
           <Box

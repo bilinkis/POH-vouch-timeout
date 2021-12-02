@@ -5,6 +5,17 @@ export const appQuery = graphql`
     submission(id: $id) {
       status
       registered
+      vouchees {
+        id,
+        status,
+        disputed,
+        requests{
+          challenges{
+            creationTime
+          }
+        }
+
+      }
       requests(
         orderBy: creationTime
         orderDirection: desc
