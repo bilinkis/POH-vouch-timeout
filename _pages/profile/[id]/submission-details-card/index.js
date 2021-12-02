@@ -160,10 +160,12 @@ export default function SubmissionDetailsCard({
         ? 1
         : -1
     );
+    console.log(latestChallengedVouchee)
 
     const challengeTimestamp =
       latestChallengedVouchee[0].requests[0].challenges[0].creationTime * 1000;
-    vouchingTimeout = challengeTimestamp + 2629743000 > Date.now();
+      console.log(new Date(3888000000+challengeTimestamp).toLocaleString())
+    vouchingTimeout = challengeTimestamp + 3888000000 > Date.now();
   }
 
   const { lastStatusChange } = request;
@@ -328,7 +330,7 @@ export default function SubmissionDetailsCard({
               {ratioOfVouchees < 0.8 && vouchingTimeout ? (
                 <Text>
                   You can&apos;t vouch because your vouching coherence is under
-                  80%.{" "}
+                  80% or one of the profiles you vouched for in the last 45 days was challenged.{" "}
                 </Text>
               ) : (
                 <>
